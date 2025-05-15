@@ -1,3 +1,4 @@
+from app.menu import MenuItem
 class Restaurant:
     restaurant_count=0
 
@@ -9,14 +10,18 @@ class Restaurant:
         self.menu = {}
         self.orders = []
 
-    def add_menu_item(self,item,price):
-        self.menu[item]=price
+    def add_menu_item(self, name ,price):
+        item = MenuItem(name,price)
+        self.menu.append(item)
         print(f"{item} added to {self.name}'s menu at price rs.{price}")
 
     def view_menu(self):
         print(f"the menu for {self.name} is:")
-        for item,price in self.menu.items():
-            print(f"-{item}: rs{price} ")
+        if not self.menu:
+            print("No items in menu yet")
+            return
+        for item in self.menu:
+            print(f"-{item.name}: rs{item.price} ")
 
     def receive_order(self,order):
         self.orders.append(order)
