@@ -11,9 +11,10 @@ class Restaurant:
         self.orders = []
 
     def add_menu_item(self, name ,price):
+        from app.menu import MenuItem
         item = MenuItem(name,price)
-        self.menu.append(item)
-        print(f"{item} added to {self.name}'s menu at price rs.{price}")
+        self.menu[item.name] = item  
+        print(f"{item.name} added to {self.name}'s menu at price rs.{price}")
 
     def view_menu(self):
         print(f"the menu for {self.name} is:")
