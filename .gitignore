@@ -1,1 +1,3 @@
 __pycache__/
+.vscode/
+__temp_code_runner.py

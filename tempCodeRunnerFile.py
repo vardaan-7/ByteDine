@@ -32,8 +32,7 @@ def signup_restaurant(name: str, location: str):
 def add_menu_item(restaurant_id: int, item_name: str, price: int):
     for r in restaurants:
         if r.restaurant_id == restaurant_id:
-            item = MenuItem(item_name,price)
-            r.add_menu_item(item)
+            r.add_menu_item(item_name, price)
             return {"message": f"{item_name} added to menu"}
     return {"error": "Restaurant not found"}
 
@@ -44,7 +43,7 @@ def view_menu(restaurant_id: int):
             return {
                 "restaurant": r.name,
                 "menu": [
-                    {"item": item.name, "price": item.price}
+                    {"item": item, "price": price}
                     for item, price in r.menu.items()
                 ]
             }

@@ -3,4 +3,4 @@ class MenuItem:
         self.name=name
         self.price=price
     def __str__(self):
-        print(f"{self.name} - rs{self.price}")
+        return (f"{self.name} - rs{self.price}")
