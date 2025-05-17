@@ -10,7 +10,7 @@ class Restaurant:
         self.menu = {}
         self.orders = []
 
-    def add_menu_item(self,item):
+    def add_menu_item(self,item: MenuItem):
         self.menu[item.name] = item
 
     def view_menu(self):

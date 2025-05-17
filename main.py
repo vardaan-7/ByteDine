@@ -11,6 +11,7 @@ app = FastAPI()
 users = []
 restaurants = []
 deliveryboys = []
+orders = []
 
 @app.get("/")
 def home():
@@ -51,7 +52,38 @@ def view_menu(restaurant_id: int):
                 "restaurant": r.name,
                 "menu": [
                     {"item": item.name, "price": item.price}
-                    for item, price in r.menu.items()
+                    for item in r.menu.values()  # Use .values() here
                 ]
             }
     return {"error": "Restaurant not found"}
+
+@app.post("/order")
+def place_order(user_id: int, restaurant_id: int, item_name: str):
+    # Find user object
+    user = next((u for u in users if u.user_id == user_id), None)
+    if not user:
+        return {"error": "User not found"}
+
+    # Find restaurant object
+    restaurant = next((r for r in restaurants if r.restaurant_id == restaurant_id), None)
+    if not restaurant:
+        return {"error": "Restaurant not found"}
+
+    # Find item object from restaurant menu
+    item = restaurant.menu.get(item_name)
+    if not item:
+        return {"error": "Item not found in restaurant menu"}
+
+    # Create order
+    order = Order(user, restaurant, item)
+    orders.append(order)
+    restaurant.receive_order(order)
+
+    return {
+        "message": "Order placed successfully!",
+        "order_id": order.order_id,
+        "user": user.name,
+        "restaurant": restaurant.name,
+        "item": item.name,
+        "price": item.price
+    }
