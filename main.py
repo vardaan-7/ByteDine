@@ -37,6 +37,12 @@ def add_menu_item(restaurant_id: int, item_name: str, price: int):
             return {"message": f"{item_name} added to menu"}
     return {"error": "Restaurant not found"}
 
+@app.post("/signup/deliveryboy")
+def signup_deliveryboy(name: str):
+    deliveryboy = DeliveryBoy(name)
+    deliveryboys.append(deliveryboy)
+    return {"message": "Delivery partner signed up", "id": deliveryboy.delivery_boy_id}
+
 @app.get("/restaurant/{restaurant_id}/menu")
 def view_menu(restaurant_id: int):
     for r in restaurants:
