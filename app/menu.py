@@ -1,6 +1,13 @@
-class MenuItem:
-    def __init__(self,name,price):
-        self.name=name
-        self.price=price
-    def __str__(self):
-        return (f"{self.name} - rs{self.price}")
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship
+from app.database import Base
+
+class MenuItem(Base):
+    __tablename__ = 'menu_items'
+
+    item_id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    price = Column(Integer, nullable=False)
+
+    restaurant_id = Column(Integer, ForeignKey('restaurants.restaurant_id'))
+    restaurant = relationship("Restaurant", back_populates="menu_items")

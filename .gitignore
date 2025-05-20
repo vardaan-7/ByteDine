@@ -1,4 +1,6 @@
 __pycache__/
+**/__pycache__/
 *.pyc
 .vscode/
 __temp_code_runner.py
+app.db
