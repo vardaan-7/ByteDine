@@ -1,5 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
+from pydantic import BaseModel
+from app.ordergroup import OrderGroup
 from app.database import SessionLocal, engine, Base
 from app.user import User
 from app.restaurant import Restaurant
@@ -18,6 +21,16 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Pydantic models for request validation
+class OrderItem(BaseModel):
+    restaurant_id: int
+    item_name: str
+    quantity: int = 1
+
+class MultipleOrderRequest(BaseModel):
+    user_id: int
+    items: List[OrderItem]
 
 @app.get("/")
 def home():
@@ -73,6 +86,38 @@ def view_menu(restaurant_id: int, db: Session = Depends(get_db)):
         "menu": [{"item": item.name, "price": item.price} for item in menu]
     }
 
+@app.get("/restaurants")
+def list_restaurants(db: Session = Depends(get_db)):
+    restaurants = db.query(Restaurant).all()
+    return {
+        "restaurants": [
+            {"id": r.restaurant_id, "name": r.name, "location": r.location} 
+            for r in restaurants
+        ]
+    }
+
+@app.get("/order-options")
+def get_order_options(db: Session = Depends(get_db)):
+    # Get all restaurants
+    restaurants = db.query(Restaurant).all()
+    
+    result = []
+    for restaurant in restaurants:
+        # Get menu items for each restaurant
+        menu_items = db.query(MenuItem).filter(MenuItem.restaurant_id == restaurant.restaurant_id).all()
+        
+        result.append({
+            "restaurant_id": restaurant.restaurant_id,
+            "restaurant_name": restaurant.name,
+            "location": restaurant.location,
+            "menu": [
+                {"item_name": item.name, "price": item.price}
+                for item in menu_items
+            ]
+        })
+    
+    return {"order_options": result}
+
 @app.post("/order")
 def place_order(user_id: int, restaurant_id: int, item_name: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.user_id == user_id).first()
@@ -102,4 +147,61 @@ def place_order(user_id: int, restaurant_id: int, item_name: str, db: Session = 
         "restaurant": restaurant.name,
         "item": item.name,
         "price": item.price
+    }
+
+@app.post("/place-multiple-orders")
+def place_multiple_orders(order_request: MultipleOrderRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.user_id == order_request.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Create new OrderGroup
+    order_group = OrderGroup(user_id=user.user_id)
+    db.add(order_group)
+    db.commit()
+    db.refresh(order_group)
+
+    placed_orders = []
+    total_price = 0
+
+    for item_request in order_request.items:
+        restaurant = db.query(Restaurant).filter(
+            Restaurant.restaurant_id == item_request.restaurant_id
+        ).first()
+        if not restaurant:
+            raise HTTPException(status_code=404, detail="Restaurant not found")
+
+        menu_item = db.query(MenuItem).filter(
+            MenuItem.restaurant_id == item_request.restaurant_id,
+            MenuItem.name == item_request.item_name
+        ).first()
+        if not menu_item:
+            raise HTTPException(status_code=404, detail="Item not found in menu")
+
+        for _ in range(item_request.quantity):
+            order = Order(
+                user_id=user.user_id,
+                restaurant_id=restaurant.restaurant_id,
+                item_id=menu_item.item_id,
+                group_id=order_group.group_id  # Assign group ID here
+            )
+            db.add(order)
+            db.commit()
+            db.refresh(order)
+
+            placed_orders.append({
+                "order_id": order.order_id,
+                "restaurant": restaurant.name,
+                "item": menu_item.name,
+                "price": menu_item.price
+            })
+
+            total_price += menu_item.price
+
+    return {
+        "message": f"Successfully placed {len(placed_orders)} orders",
+        "group_id": order_group.group_id,
+        "user": user.name,
+        "orders": placed_orders,
+        "total_price": total_price
     }
