@@ -9,4 +9,3 @@ class DeliveryBoy(Base):
     name = Column(String, nullable=False)
     is_available = Column(Boolean, default=True)
     
-    # You can add more fields like contact, rating, etc., if needed
