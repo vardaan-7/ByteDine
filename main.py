@@ -9,6 +9,7 @@ from app.restaurant import Restaurant
 from app.menu import MenuItem
 from app.order import Order
 from app.deliveryboy import DeliveryBoy
+from app.deliveryAssign import DeliveryAssignment
 
 Base.metadata.create_all(bind=engine)
 
@@ -204,4 +205,31 @@ def place_multiple_orders(order_request: MultipleOrderRequest, db: Session = Dep
         "user": user.name,
         "orders": placed_orders,
         "total_price": total_price
+    }
+@app.post("/assign-delivery")
+def assign_delivery(order_group_id: int, delivery_boy_id: int, db: Session = Depends(get_db)):
+    # Check if group exists
+    order_group = db.query(OrderGroup).filter(OrderGroup.group_id == order_group_id).first()
+    if not order_group:
+        raise HTTPException(status_code=404, detail="Order group not found")
+
+    # Check if delivery boy exists
+    delivery_boy = db.query(DeliveryBoy).filter(DeliveryBoy.delivery_boy_id == delivery_boy_id).first()
+    if not delivery_boy:
+        raise HTTPException(status_code=404, detail="Delivery partner not found")
+
+    # Check if already assigned
+    existing = db.query(DeliveryAssignment).filter(DeliveryAssignment.order_group_id == order_group_id).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Delivery already assigned for this group")
+
+    # Create assignment
+    assignment = DeliveryAssignment(order_group_id=order_group_id, delivery_boy_id=delivery_boy_id)
+    db.add(assignment)
+    db.commit()
+    db.refresh(assignment)
+
+    return {
+        "message": f"Delivery partner {delivery_boy.name} assigned to order group {order_group_id}",
+        "assigned_at": assignment.assigned_at
     }
