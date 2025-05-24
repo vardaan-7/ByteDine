@@ -10,6 +10,7 @@ from app.menu import MenuItem
 from app.order import Order
 from app.deliveryboy import DeliveryBoy
 from app.deliveryAssign import DeliveryAssignment
+from app.deliveryboy import assign_delivery_boy
 
 Base.metadata.create_all(bind=engine)
 
@@ -184,7 +185,7 @@ def place_multiple_orders(order_request: MultipleOrderRequest, db: Session = Dep
                 user_id=user.user_id,
                 restaurant_id=restaurant.restaurant_id,
                 item_id=menu_item.item_id,
-                group_id=order_group.group_id  # Assign group ID here
+                group_id=order_group.group_id
             )
             db.add(order)
             db.commit()
@@ -199,13 +200,27 @@ def place_multiple_orders(order_request: MultipleOrderRequest, db: Session = Dep
 
             total_price += menu_item.price
 
+    # ✅ Auto-assign available delivery partner
+    available_boy = db.query(DeliveryBoy).filter(DeliveryBoy.is_available == True).first()
+    if not available_boy:
+        raise HTTPException(status_code=503, detail="No delivery partner available right now.")
+
+    # Create assignment and update availability
+    assignment = DeliveryAssignment(order_group_id=order_group.group_id, delivery_boy_id=available_boy.delivery_boy_id)
+    available_boy.is_available = False
+
+    db.add(assignment)
+    db.commit()
+
     return {
         "message": f"Successfully placed {len(placed_orders)} orders",
         "group_id": order_group.group_id,
         "user": user.name,
         "orders": placed_orders,
-        "total_price": total_price
+        "total_price": total_price,
+        "assigned_delivery_boy": available_boy.name
     }
+
 @app.post("/assign-delivery")
 def assign_delivery(order_group_id: int, delivery_boy_id: int, db: Session = Depends(get_db)):
     # Check if group exists
@@ -233,3 +248,18 @@ def assign_delivery(order_group_id: int, delivery_boy_id: int, db: Session = Dep
         "message": f"Delivery partner {delivery_boy.name} assigned to order group {order_group_id}",
         "assigned_at": assignment.assigned_at
     }
+
+@app.get("/delivery-assignments")
+def get_delivery_assignments(db: Session = Depends(get_db)):
+    assignments = db.query(DeliveryAssignment).all()
+    result = []
+    for a in assignments:
+        delivery_boy = db.query(DeliveryBoy).filter(DeliveryBoy.delivery_boy_id == a.delivery_boy_id).first()
+        result.append({
+            "order_group_id": a.order_group_id,
+            "delivery_boy_id": a.delivery_boy_id,
+            "delivery_boy_name": delivery_boy.name if delivery_boy else "Unknown",
+            "assigned_at": a.assigned_at
+        })
+    return {"assignments": result}
+
