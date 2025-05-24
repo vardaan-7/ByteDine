@@ -200,12 +200,11 @@ def place_multiple_orders(order_request: MultipleOrderRequest, db: Session = Dep
 
             total_price += menu_item.price
 
-    # ✅ Auto-assign available delivery partner
     available_boy = db.query(DeliveryBoy).filter(DeliveryBoy.is_available == True).first()
     if not available_boy:
         raise HTTPException(status_code=503, detail="No delivery partner available right now.")
 
-    # Create assignment and update availability
+
     assignment = DeliveryAssignment(order_group_id=order_group.group_id, delivery_boy_id=available_boy.delivery_boy_id)
     available_boy.is_available = False
 
@@ -223,12 +222,12 @@ def place_multiple_orders(order_request: MultipleOrderRequest, db: Session = Dep
 
 @app.post("/assign-delivery")
 def assign_delivery(order_group_id: int, delivery_boy_id: int, db: Session = Depends(get_db)):
-    # Check if group exists
+   
     order_group = db.query(OrderGroup).filter(OrderGroup.group_id == order_group_id).first()
     if not order_group:
         raise HTTPException(status_code=404, detail="Order group not found")
 
-    # Check if delivery boy exists
+    
     delivery_boy = db.query(DeliveryBoy).filter(DeliveryBoy.delivery_boy_id == delivery_boy_id).first()
     if not delivery_boy:
         raise HTTPException(status_code=404, detail="Delivery partner not found")
