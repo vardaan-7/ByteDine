@@ -15,6 +15,8 @@ class Order(Base):
 
     #Foreign key to OrderGroup
     group_id = Column(Integer, ForeignKey('order_groups.group_id'), nullable=True)
+    order_group_id = Column(Integer, ForeignKey("order_groups.group_id"), nullable=True)
+    
 
     user = relationship("User")
     restaurant = relationship("Restaurant")

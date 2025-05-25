@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, DateTime, func
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, func,String
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -10,5 +10,6 @@ class OrderGroup(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     delivery_boy_id = Column(Integer, ForeignKey("delivery_boys.delivery_boy_id"), nullable=True)
     delivery_boy = relationship("DeliveryBoy")
+    status = Column(String, default="pending")
 
     orders = relationship("Order", back_populates="order_group")
