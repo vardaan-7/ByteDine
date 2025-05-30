@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, ForeignKey, DateTime, func,String
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, func, String
 from sqlalchemy.orm import relationship
 from app.database import Base
+from app.order import Order  # adjust import path if needed
 
 class OrderGroup(Base):
     __tablename__ = "order_groups"
@@ -12,4 +13,9 @@ class OrderGroup(Base):
     delivery_boy = relationship("DeliveryBoy")
     status = Column(String, default="pending")
 
-    orders = relationship("Order", back_populates="order_group")
+    # Specify the correct FK path
+    orders = relationship(
+        "Order",
+        back_populates="order_group",
+        foreign_keys="[Order.group_id]"
+    )

@@ -242,6 +242,8 @@ def assign_delivery(order_group_id: int, delivery_boy_id: int, db: Session = Dep
     db.add(assignment)
     db.commit()
     db.refresh(assignment)
+    order_group.status = "assigned"
+    db.commit()
 
     return {
         "message": f"Delivery partner {delivery_boy.name} assigned to order group {order_group_id}",
@@ -262,3 +264,10 @@ def get_delivery_assignments(db: Session = Depends(get_db)):
         })
     return {"assignments": result}
 
+@app.get("/order-group/{group_id}/status")
+def get_order_group_status(group_id: int, db: Session = Depends(get_db)):
+    group = db.query(OrderGroup).filter(OrderGroup.group_id == group_id).first()
+    if not group:
+        raise HTTPException(status_code=404, detail="Order group not found")
+
+    return {"group_id": group.group_id, "status": group.status}

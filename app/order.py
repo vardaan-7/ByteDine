@@ -13,14 +13,10 @@ class Order(Base):
     quantity = Column(Integer, default=1)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    #Foreign key to OrderGroup
     group_id = Column(Integer, ForeignKey('order_groups.group_id'), nullable=True)
-    order_group_id = Column(Integer, ForeignKey("order_groups.group_id"), nullable=True)
-    
 
     user = relationship("User")
     restaurant = relationship("Restaurant")
     item = relationship("MenuItem")
 
-    #Relationship to OrderGroup
     order_group = relationship("OrderGroup", back_populates="orders")
