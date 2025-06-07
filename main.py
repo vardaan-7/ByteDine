@@ -182,23 +182,24 @@ def place_multiple_orders(order_request: MultipleOrderRequest, db: Session = Dep
 
         for _ in range(item_request.quantity):
             order = Order(
-                user_id=user.user_id,
-                restaurant_id=restaurant.restaurant_id,
-                item_id=menu_item.item_id,
-                group_id=order_group.group_id
-            )
-            db.add(order)
-            db.commit()
-            db.refresh(order)
+            user_id=user.user_id,
+            restaurant_id=restaurant.restaurant_id,
+            item_id=menu_item.item_id,
+            quantity=item_request.quantity,
+            group_id=order_group.group_id
+        )
+        db.add(order)
+        db.commit()
+        db.refresh(order)
 
-            placed_orders.append({
-                "order_id": order.order_id,
-                "restaurant": restaurant.name,
-                "item": menu_item.name,
-                "price": menu_item.price
-            })
-
-            total_price += menu_item.price
+        placed_orders.append({
+            "order_id": order.order_id,
+            "restaurant": restaurant.name,
+            "item": menu_item.name,
+            "quantity": item_request.quantity,
+            "price": menu_item.price * item_request.quantity
+        })
+        total_price += menu_item.price * item_request.quantity
 
     available_boy = db.query(DeliveryBoy).filter(DeliveryBoy.is_available == True).first()
     if not available_boy:
@@ -264,10 +265,10 @@ def get_delivery_assignments(db: Session = Depends(get_db)):
         })
     return {"assignments": result}
 
-@app.get("/order-group/{group_id}/status")
-def get_order_group_status(group_id: int, db: Session = Depends(get_db)):
-    group = db.query(OrderGroup).filter(OrderGroup.group_id == group_id).first()
-    if not group:
-        raise HTTPException(status_code=404, detail="Order group not found")
+# @app.get("/order-group/{group_id}/status")
+# def get_order_group_status(group_id: int, db: Session = Depends(get_db)):
+#     group = db.query(OrderGroup).filter(OrderGroup.group_id == group_id).first()
+#     if not group:
+#         raise HTTPException(status_code=404, detail="Order group not found")
 
-    return {"group_id": group.group_id, "status": group.status}
+#     return {"group_id": group.group_id, "status": group.status}
